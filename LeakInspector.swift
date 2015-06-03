@@ -2,7 +2,6 @@
     func didLeakReference(ref: AnyObject, name: String)
 }
 
-
 @objc class LeakInspector {
 
     private class RefWatch {
@@ -16,7 +15,8 @@
         }
     }
 
-    weak var delegate: LeakInspectorDelegate?
+    static var delegate: LeakInspectorDelegate?
+
     private static let sharedInstance = LeakInspector()
     private var refsToWatch = [RefWatch]()
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
@@ -43,37 +43,47 @@
     private func scheduleToRun() {
         let frequency = Int64(5 * Double(NSEC_PER_SEC))
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, frequency)
-        dispatch_after(delayTime, dispatch_get_main_queue()) { [weak self] in
-            self?.checkForLeaks()
-            self?.scheduleToRun()
+        dispatch_after(delayTime, dispatch_get_main_queue()) {
+            self.checkForLeaks()
+            self.scheduleToRun()
         }
     }
 
-    private func checkForLeaks() {
-        var removeIndexes = [Int]()
-        for (index, refWatch) in enumerate(refsToWatch) {
+    func checkForLeaks() {
+        var removeRefs = [RefWatch]()
+
+        // Check all the objects to verify they've been deinit'd/dealloc'd
+        for refWatch in refsToWatch {
             if let ref: AnyObject = refWatch.ref {
                 if (hasRefLikelyLeaked(refWatch)) {
                     alertThatRefHasLeaked(ref, name: refWatch.name)
+                    removeRefs.append(refWatch)
                 }
             } else {
-                removeIndexes.append(index)
+                removeRefs.append(refWatch)
             }
         }
 
-        for index in removeIndexes {
-            refsToWatch.removeAtIndex(index)
+        // Remove objects that we no longer need to track
+        for refWatch in removeRefs {
+            for (index, aRefWatch) in enumerate(refsToWatch) {
+                if refWatch === aRefWatch {
+                    refsToWatch.removeAtIndex(index)
+                    break
+                }
+            }
         }
     }
 
     private func hasRefLikelyLeaked(refWatch: RefWatch) -> Bool {
+        let checkIntervalInSeconds: NSTimeInterval = 5
         var hasRefLikelyLeaked = false
-        if (abs(refWatch.date.timeIntervalSinceNow) > 5) {
+        if (abs(refWatch.date.timeIntervalSinceNow) > checkIntervalInSeconds) {
             if let controller = refWatch.ref as? UIViewController {
                 if (controller.parentViewController == nil && controller.navigationController == nil) {
                     hasRefLikelyLeaked = true;
                 } else {
-                    refWatch.date = NSDate()
+                    refWatch.date = NSDate().dateByAddingTimeInterval(checkIntervalInSeconds)
                 }
             } else {
                 hasRefLikelyLeaked = true
@@ -83,8 +93,8 @@
     }
 
     private func alertThatRefHasLeaked(ref: AnyObject, name: String) {
-        NSLog("Leak detected %@", name)
-        if let delegate = delegate {
+        NSLog("Leak Inspector: detected possible leak of %@", name)
+        if let delegate = LeakInspector.delegate {
             delegate.didLeakReference(ref, name: name)
         }
     }
