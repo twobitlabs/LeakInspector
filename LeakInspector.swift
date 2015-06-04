@@ -19,14 +19,19 @@
         }
     }
 
-    static var delegate: LeakInspectorDelegate?
+    static var delegate: LeakInspectorDelegate? {
+        didSet {
+            sharedInstance // forces the shared instance to initialize
+        }
+    }
 
     private static let sharedInstance = LeakInspector()
     private var refsToWatch = [RefWatch]()
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
 
-    init() {
+    private init() {
         if simulator {
+            swizzleViewDidLoad()
             scheduleToRun()
         }
     }
@@ -125,5 +130,19 @@
         if let delegate = LeakInspector.delegate {
             delegate.didLeakReference(ref, name: name)
         }
+    }
+
+    private func swizzleViewDidLoad() {
+        method_exchangeImplementations(
+            class_getInstanceMethod(UIViewController.self, "loadView"),
+            class_getInstanceMethod(UIViewController.self, "loadView_WithLeakInspector")
+        )
+    }
+}
+
+extension UIViewController {
+    func loadView_WithLeakInspector() {
+        LeakInspector.watch(self)
+        loadView_WithLeakInspector()
     }
 }
