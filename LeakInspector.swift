@@ -2,6 +2,10 @@
     func didLeakReference(ref: AnyObject, name: String)
 }
 
+@objc protocol LeakInspectorIgnore {
+
+}
+
 @objc class LeakInspector {
 
     private class RefWatch {
@@ -22,22 +26,46 @@
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
 
     init() {
-        if (simulator) {
+        if simulator {
             scheduleToRun()
         }
     }
 
-    class func watchRef(ref: AnyObject) {
-        if (sharedInstance.simulator) {
-            watchRef(ref, name: _stdlib_getDemangledTypeName(ref))
+    class func watch(ref: AnyObject) {
+        if sharedInstance.simulator {
+            watch(ref, name: _stdlib_getDemangledTypeName(ref))
         }
     }
 
-    class func watchRef(ref: AnyObject, name: String) {
-        if (sharedInstance.simulator) {
-            var newRefToWatch = RefWatch(ref: ref, name: name)
-            sharedInstance.refsToWatch.append(newRefToWatch)
+    class func watch(ref: AnyObject, name: String) {
+        if sharedInstance.simulator {
+            if NSThread.isMainThread() {
+                sharedInstance.watch(ref, name: name)
+            } else {
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    self.sharedInstance.watch(ref, name: name)
+                })
+            }
         }
+    }
+
+    private func watch(ref: AnyObject, name: String) {
+        if shouldWatch(ref) {
+            var newRefToWatch = RefWatch(ref: ref, name: name)
+            refsToWatch.append(newRefToWatch)
+        }
+    }
+
+    private func shouldWatch(ref: AnyObject) -> Bool {
+        if ref is LeakInspectorIgnore {
+            return false
+        }
+        for refWatch in refsToWatch {
+            if ref === refWatch.ref {
+                return false
+            }
+        }
+        return true
     }
 
     private func scheduleToRun() {
@@ -49,7 +77,7 @@
         }
     }
 
-    func checkForLeaks() {
+    private func checkForLeaks() {
         var removeRefs = [RefWatch]()
 
         // Check all the objects to verify they've been deinit'd/dealloc'd

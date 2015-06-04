@@ -4,7 +4,7 @@ An iOS memory leak detection tool to help you prevent leaking UIViewControllers 
 
 LeakInspector is written in Swift but works on Objective-C projects too. This project was inspired by [Square's Leak Canary](https://github.com/square/leakcanary) for Android. At [Two Bit Labs](http://twobitlabs.com) we use Leak Canary on our Android projects and have been so impressed with how it helped us catch memory leaks during the development cycle that we wanted a similar tool for the iOS apps we work on.
 
-This was a very quick proof of concept so there's a lot of room for improvement to make it more robust and helpful in identifying the source of a leak. 
+This was a quick proof of concept so there's a lot of room for improvement to make it more robust and helpful in identifying the source of a leak. 
 
 ## How to use it
 
@@ -28,7 +28,7 @@ Swift:
 LeakInspector.delegate = LeakInspectorAlertProvider()
 ```
 
-If you'd rather do something else when a leak is found just set the delegate to be your own app delegate or some other class that implements the LeakInspectorDelegate protocol. LeakInspector keeps a strong reference to its delegate so that you can set it and forget it (but something to keep in mind if you implement your own delegate).
+If you'd rather do something else when a leak is found just set the delegate to be your own app delegate or some other class that implements the *LeakInspectorDelegate* protocol. LeakInspector keeps a strong reference to its delegate so that you can set it and forget it (but something to keep in mind if you implement your own delegate).
 
 ### Watching UIViewControllers for memory leaks
 
@@ -37,18 +37,18 @@ Next, start tracking controllers for memory leaks. In all of our projects we hav
 Objective-C:
 
 ```
-[LeakInspector watchRef:self];
+[LeakInspector watch:self];
 ```
 
 Swift:
 
 ```
-LeakInspector.watchRef(self)
+LeakInspector.watch(self)
 ```
 
 Leak Inspector keeps a weak reference to any objects it tracks and will check all registered controllers every 5 seconds. If it finds a controller that has not deallocated but has a null navigationController or parentController it will flag it as a possible leak. 
 
-You may have legitimate cases in your app where you remove a controller but want to hang on to it, if so you'll need to NOT register that controller with Leak Inspector. Feel free to submit a pull request with an alternative solution for that issue if you run into it.
+You may have legitimate cases in your app where you remove a controller but want to hang on to it, have those controllers implement the empty *LeakInspectorIgnore* protocol.
 
 ### Watching any other kinds of object for memory leaks
 
@@ -58,7 +58,7 @@ Objective-C:
 
 ```
 [self.pollingManager stopPolling];
-[LeakInspector watchRef:self.pollingManager]; // Start tracking it and Leak Inspector will warn you if it doesn't get deallocated 
+[LeakInspector watch:self.pollingManager]; // Start tracking it and Leak Inspector will warn you if it doesn't get deallocated 
 self.pollingManager = nil;
 ```
 
@@ -66,7 +66,7 @@ Swift:
 
 ```
 pollingManager.stopPolling()
-LeakInspector.watchRef(pollingManager)
+LeakInspector.watch(pollingManager)
 pollingManager = nil
 ```
 
