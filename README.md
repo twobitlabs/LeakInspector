@@ -6,6 +6,8 @@ LeakInspector is written in Swift but works on Objective-C projects too. This pr
 
 This was a quick proof of concept so there's a lot of room for improvement to make it more robust and helpful in identifying the source of a leak. 
 
+![screenshot.png](assets/screenshot.png)
+
 ## How to use it
 
 At the moment we don't have Cocoapods or Carthage support so you'll need to git submodule it or just download a zip and drop the files directly into your project:
@@ -54,6 +56,13 @@ Swift:
 pollingManager.stopPolling()
 LeakInspector.watch(pollingManager)
 pollingManager = nil
+```
+
+If you're registering multiple objects of the same class, there's a second version of the watch method that lets you pass an identifying name so that if a leak is discovered it will help you disambiguate which object leaked:
+
+```
+LeakInspector.watch(pollingManagerA, name: "News Feed PollingManager")
+LeakInspector.watch(pollingManagerB, name: "Message PollingManager")
 ```
 
 ## I found a leak, now what?
