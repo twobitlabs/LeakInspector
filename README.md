@@ -10,7 +10,7 @@ This was a quick proof of concept so there's a lot of room for improvement to ma
 
 ## How to use it
 
-At the moment we don't have Cocoapods or Carthage support so you'll need to git submodule it or just download a zip and drop the files directly into your project:
+At the moment we don't have Cocoapods or Carthage support so you'll need to git submodule it or just download a zip and drop the 2 swift files directly into your project:
 
 * [Download the latest zip file](https://github.com/twobitlabs/LeakInspector/archive/master.zip)
 
