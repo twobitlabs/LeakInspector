@@ -2,11 +2,11 @@
 
 An iOS memory leak detection tool to help you prevent leaking UIViewControllers (and any other object you want to track to make sure it gets deallocated when expected). It only runs when running in the iOS simulator and short circuits on device so you don't need to worry about it running in your production app.
 
+![screenshot.png](assets/screenshot.png)
+
 LeakInspector is written in Swift but works on Objective-C projects too. This project was inspired by [Square's Leak Canary](https://github.com/square/leakcanary) for Android. At [Two Bit Labs](http://twobitlabs.com) we use Leak Canary on our Android projects and have been so impressed with how it helped us catch memory leaks during the development cycle that we wanted a similar tool for the iOS apps we work on.
 
 This was a quick proof of concept so there's a lot of room for improvement to make it more robust and helpful in identifying the source of a leak. 
-
-![screenshot.png](assets/screenshot.png)
 
 ## How to use it
 
