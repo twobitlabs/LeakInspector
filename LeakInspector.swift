@@ -29,6 +29,7 @@
 
     private static let sharedInstance = LeakInspector()
     private var refsToWatch = [RefWatch]()
+    private var classesToIgnore = [AnyObject.Type]()
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
     private let frequency: NSTimeInterval = 3
 
@@ -51,6 +52,18 @@
         }
     }
 
+    class func ignoreClass(type: AnyObject.Type) {
+        if sharedInstance.simulator {
+            if NSThread.isMainThread() {
+                sharedInstance.ignoreClass(type)
+            } else {
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    self.sharedInstance.ignoreClass(type)
+                })
+            }
+        }
+    }
+
     private class func register(ref: AnyObject, name: String, ignore: Bool) {
         if sharedInstance.simulator {
             if NSThread.isMainThread() {
@@ -61,6 +74,16 @@
                 })
             }
         }
+    }
+
+    private func ignoreClass(type: AnyObject.Type) {
+        for (index, clazz) in enumerate(classesToIgnore) {
+            if clazz === type {
+                classesToIgnore.removeAtIndex(index)
+                break
+            }
+        }
+        classesToIgnore.append(type.self)
     }
 
     private func register(ref: AnyObject, name: String, ignore: Bool) {
@@ -82,6 +105,13 @@
         if ref is LeakInspectorIgnore {
             return false
         }
+
+        for clazz in classesToIgnore {
+            if ref.dynamicType === clazz.self {
+                return false
+            }
+        }
+
         for refWatch in refsToWatch {
             if ref === refWatch.ref {
                 return false
