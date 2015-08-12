@@ -14,7 +14,7 @@
         let ignore: Bool
         var failedChecks = 0
 
-        init(ref: AnyObject, name: String, ignore: Bool = false) {
+        init(ref: AnyObject, name: String, ignore: Bool) {
             self.ref = ref
             self.name = name
             self.ignore = ignore
@@ -66,6 +66,14 @@
     private func register(ref: AnyObject, name: String, ignore: Bool) {
         if shouldWatch(ref) {
             var newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
+            var refToRemove: RefWatch?
+            // Check to see if we're already watching this ref and remove the old RefWatch if so
+            for (index, aRefWatch) in enumerate(refsToWatch) {
+                if aRefWatch.ref === ref {
+                    refsToWatch.removeAtIndex(index)
+                    break
+                }
+            }
             refsToWatch.append(newRefToWatch)
         }
     }
