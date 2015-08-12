@@ -12,6 +12,7 @@
         weak var ref: AnyObject?
         var name: String
         var date = NSDate()
+        var failedChecks = 0
 
         init(ref: AnyObject, name: String) {
             self.ref = ref
@@ -28,6 +29,7 @@
     private static let sharedInstance = LeakInspector()
     private var refsToWatch = [RefWatch]()
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
+    private let frequency: NSTimeInterval = 3
 
     private init() {
         if simulator {
@@ -74,8 +76,7 @@
     }
 
     private func scheduleToRun() {
-        let frequency = Int64(5 * Double(NSEC_PER_SEC))
-        let delayTime = dispatch_time(DISPATCH_TIME_NOW, frequency)
+        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(frequency * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
             self.checkForLeaks()
             self.scheduleToRun()
@@ -89,8 +90,14 @@
         for refWatch in refsToWatch {
             if let ref: AnyObject = refWatch.ref {
                 if (hasRefLikelyLeaked(refWatch)) {
-                    alertThatRefHasLeaked(ref, name: refWatch.name)
-                    removeRefs.append(refWatch)
+                    refWatch.failedChecks++
+                    if (refWatch.failedChecks > 1) {
+                        // To prevent pausing in the debugger from throwing a false positive we make it fail the check twice
+                        alertThatRefHasLeaked(ref, name: refWatch.name)
+                        removeRefs.append(refWatch)
+                    }
+                } else {
+                    refWatch.failedChecks = 0
                 }
             } else {
                 removeRefs.append(refWatch)
@@ -109,14 +116,13 @@
     }
 
     private func hasRefLikelyLeaked(refWatch: RefWatch) -> Bool {
-        let checkIntervalInSeconds: NSTimeInterval = 5
         var hasRefLikelyLeaked = false
-        if (abs(refWatch.date.timeIntervalSinceNow) > checkIntervalInSeconds) {
+        if (abs(refWatch.date.timeIntervalSinceNow) > frequency) {
             if let controller = refWatch.ref as? UIViewController {
                 if (controller.parentViewController == nil && controller.navigationController == nil) {
                     hasRefLikelyLeaked = true;
                 } else {
-                    refWatch.date = NSDate().dateByAddingTimeInterval(checkIntervalInSeconds)
+                    refWatch.date = NSDate().dateByAddingTimeInterval(frequency)
                 }
             } else {
                 hasRefLikelyLeaked = true
