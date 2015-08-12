@@ -10,13 +10,14 @@
 
     private class RefWatch {
         weak var ref: AnyObject?
-        var name: String
-        var date = NSDate()
+        let name: String
+        let ignore: Bool
         var failedChecks = 0
 
-        init(ref: AnyObject, name: String) {
+        init(ref: AnyObject, name: String, ignore: Bool = false) {
             self.ref = ref
             self.name = name
+            self.ignore = ignore
         }
     }
 
@@ -40,25 +41,31 @@
 
     class func watch(ref: AnyObject) {
         if sharedInstance.simulator {
-            watch(ref, name: _stdlib_getDemangledTypeName(ref))
+            register(ref, name: _stdlib_getDemangledTypeName(ref), ignore: false)
         }
     }
 
-    class func watch(ref: AnyObject, name: String) {
+    class func ignore(ref: AnyObject) {
+        if sharedInstance.simulator {
+            register(ref, name: _stdlib_getDemangledTypeName(ref), ignore: true)
+        }
+    }
+
+    private class func register(ref: AnyObject, name: String, ignore: Bool) {
         if sharedInstance.simulator {
             if NSThread.isMainThread() {
-                sharedInstance.watch(ref, name: name)
+                sharedInstance.register(ref, name: name, ignore: ignore)
             } else {
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                    self.sharedInstance.watch(ref, name: name)
+                    self.sharedInstance.register(ref, name: name, ignore: ignore)
                 })
             }
         }
     }
 
-    private func watch(ref: AnyObject, name: String) {
+    private func register(ref: AnyObject, name: String, ignore: Bool) {
         if shouldWatch(ref) {
-            var newRefToWatch = RefWatch(ref: ref, name: name)
+            var newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
             refsToWatch.append(newRefToWatch)
         }
     }
@@ -92,7 +99,7 @@
                 if (hasRefLikelyLeaked(refWatch)) {
                     refWatch.failedChecks++
                     if (refWatch.failedChecks > 1) {
-                        // To prevent pausing in the debugger from throwing a false positive we make it fail the check twice
+                        // Make objects fail twice before we report them to get async objects a chance to dealloc
                         alertThatRefHasLeaked(ref, name: refWatch.name)
                         removeRefs.append(refWatch)
                     }
@@ -116,19 +123,19 @@
     }
 
     private func hasRefLikelyLeaked(refWatch: RefWatch) -> Bool {
-        var hasRefLikelyLeaked = false
-        if (abs(refWatch.date.timeIntervalSinceNow) > frequency) {
-            if let controller = refWatch.ref as? UIViewController {
-                if (controller.parentViewController == nil && controller.navigationController == nil) {
-                    hasRefLikelyLeaked = true;
-                } else {
-                    refWatch.date = NSDate().dateByAddingTimeInterval(frequency)
-                }
-            } else {
-                hasRefLikelyLeaked = true
-            }
+        if (refWatch.ignore) {
+            return false
         }
-        return hasRefLikelyLeaked;
+
+        if let controller = refWatch.ref as? UIViewController {
+            if controller.parentViewController == nil && controller.navigationController == nil {
+                return true
+            }
+        } else {
+            return true
+        }
+        
+        return false
     }
 
     private func alertThatRefHasLeaked(ref: AnyObject, name: String) {
