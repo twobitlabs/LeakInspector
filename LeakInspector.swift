@@ -90,7 +90,6 @@ class LeakInspector: NSObject {
     private func register(ref: AnyObject, name: String, ignore: Bool) {
         if shouldWatch(ref) {
             let newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
-            var refToRemove: RefWatch?
             // Check to see if we're already watching this ref and remove the old RefWatch if so
             for (index, aRefWatch) in refsToWatch.enumerate() {
                 if aRefWatch.ref === ref {
