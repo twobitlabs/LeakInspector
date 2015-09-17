@@ -6,7 +6,7 @@
 
 }
 
-@objc class LeakInspector {
+class LeakInspector {
 
     private class RefWatch {
         weak var ref: AnyObject?
@@ -77,7 +77,7 @@
     }
 
     private func ignoreClass(type: AnyObject.Type) {
-        for (index, clazz) in enumerate(classesToIgnore) {
+        for (index, clazz) in classesToIgnore.enumerate() {
             if clazz === type {
                 classesToIgnore.removeAtIndex(index)
                 break
@@ -88,10 +88,10 @@
 
     private func register(ref: AnyObject, name: String, ignore: Bool) {
         if shouldWatch(ref) {
-            var newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
+            let newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
             var refToRemove: RefWatch?
             // Check to see if we're already watching this ref and remove the old RefWatch if so
-            for (index, aRefWatch) in enumerate(refsToWatch) {
+            for (index, aRefWatch) in refsToWatch.enumerate() {
                 if aRefWatch.ref === ref {
                     refsToWatch.removeAtIndex(index)
                     break
@@ -151,7 +151,7 @@
 
         // Remove objects that we no longer need to track
         for refWatch in removeRefs {
-            for (index, aRefWatch) in enumerate(refsToWatch) {
+            for (index, aRefWatch) in refsToWatch.enumerate() {
                 if refWatch === aRefWatch {
                     refsToWatch.removeAtIndex(index)
                     break
