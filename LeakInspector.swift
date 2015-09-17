@@ -6,7 +6,7 @@
 
 }
 
-class LeakInspector {
+class LeakInspector: NSObject {
 
     private class RefWatch {
         weak var ref: AnyObject?
@@ -33,7 +33,8 @@ class LeakInspector {
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
     private let frequency: NSTimeInterval = 3
 
-    private init() {
+    private override init() {
+        super.init()
         if simulator {
             swizzleViewDidLoad()
             scheduleToRun()
