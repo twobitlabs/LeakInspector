@@ -166,7 +166,7 @@
         }
 
         if let controller = refWatch.ref as? UIViewController {
-            if controller.parentViewController == nil && controller.navigationController == nil && controller.presentingViewController == nil {
+            if controller.parentViewController == nil && controller.navigationController == nil && controller.presentingViewController == nil && refWatch.name != "UIApplicationRotationFollowingController" {
                 return true
             }
         } else {
