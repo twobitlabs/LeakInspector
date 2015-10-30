@@ -1,9 +1,10 @@
 @objc class LeakInspectorAlertProvider: NSObject, LeakInspectorDelegate {
 
-    private weak var alertController: UIAlertController?
     private weak var alertView: UIAlertView?
+    private weak var alertController: AnyObject?
 
     func didLeakReference(ref: AnyObject, name: String) {
+        // dismiss any already visible alert
         if let alertController = self.alertController {
             alertController.dismissViewControllerAnimated(false, completion: nil)
         } else if let alertView = self.alertView {
@@ -13,7 +14,7 @@
         let title = "Leak Inspector"
         let message = "Detected possible leak of \(name)"
         let ok = "OK"
-        if objc_getClass("UIAlertController".UTF8String) != nil {
+        if #available(iOS 8.0, *) {
             let alertController = UIAlertController(title: title, message: message, preferredStyle: .Alert)
             alertController.addAction(UIAlertAction(title: ok, style: UIAlertActionStyle.Default, handler: nil))
             alertController.show()
@@ -27,13 +28,14 @@
 
 }
 
+@available(iOS 8.0, *)
 extension UIAlertController {
 
     func show() {
         present(animated: true, completion: nil)
     }
 
-    func present(#animated: Bool, completion: (() -> Void)?) {
+    func present(animated animated: Bool, completion: (() -> Void)?) {
         if let rootVC = UIApplication.sharedApplication().keyWindow?.rootViewController {
             presentFromController(rootVC, animated: animated, completion: completion)
         }
