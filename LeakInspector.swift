@@ -43,13 +43,13 @@ class LeakInspector: NSObject {
 
     class func watch(ref: AnyObject) {
         if sharedInstance.simulator {
-            register(ref, name: _stdlib_getDemangledTypeName(ref), ignore: false)
+            register(ref, name: String(ref.self), ignore: false)
         }
     }
 
     class func ignore(ref: AnyObject) {
         if sharedInstance.simulator {
-            register(ref, name: _stdlib_getDemangledTypeName(ref), ignore: true)
+            register(ref, name:String(ref.self), ignore: true)
         }
     }
 
@@ -135,7 +135,7 @@ class LeakInspector: NSObject {
         for refWatch in refsToWatch {
             if let ref: AnyObject = refWatch.ref {
                 if (hasRefLikelyLeaked(refWatch)) {
-                    refWatch.failedChecks++
+                    refWatch.failedChecks += 1
                     if (refWatch.failedChecks > 1) {
                         // Make objects fail twice before we report them to get async objects a chance to dealloc
                         alertThatRefHasLeaked(ref, name: refWatch.name)
@@ -185,8 +185,8 @@ class LeakInspector: NSObject {
 
     private func swizzleViewDidLoad() {
         method_exchangeImplementations(
-            class_getInstanceMethod(UIViewController.self, "loadView"),
-            class_getInstanceMethod(UIViewController.self, "loadView_WithLeakInspector")
+            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView)),
+            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView_WithLeakInspector))
         )
     }
 }
