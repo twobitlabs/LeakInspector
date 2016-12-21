@@ -31,7 +31,7 @@ class LeakInspector: NSObject {
     private var refsToWatch = [RefWatch]()
     private var classesToIgnore = [AnyObject.Type]()
     private let simulator = TARGET_IPHONE_SIMULATOR == 1
-    private let frequency: NSTimeInterval = 3
+    private let frequency = 3 // seconds
 
     private override init() {
         super.init()
@@ -55,7 +55,7 @@ class LeakInspector: NSObject {
 
     class func ignoreClass(type: AnyObject.Type) {
         if sharedInstance.simulator {
-            if NSThread.isMainThread() {
+            if Thread.isMainThread {
                 sharedInstance.ignoreClass(type)
             } else {
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
@@ -67,7 +67,7 @@ class LeakInspector: NSObject {
 
     private class func register(ref: AnyObject, name: String, ignore: Bool) {
         if sharedInstance.simulator {
-            if NSThread.isMainThread() {
+            if Thread.isMainThread {
                 sharedInstance.register(ref, name: name, ignore: ignore)
             } else {
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
@@ -78,9 +78,9 @@ class LeakInspector: NSObject {
     }
 
     private func ignoreClass(type: AnyObject.Type) {
-        for (index, clazz) in classesToIgnore.enumerate() {
+        for (index, clazz) in classesToIgnore.enumerated() {
             if clazz === type {
-                classesToIgnore.removeAtIndex(index)
+                classesToIgnore.remove(at: index)
                 break
             }
         }
@@ -91,9 +91,9 @@ class LeakInspector: NSObject {
         if shouldWatch(ref) {
             let newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
             // Check to see if we're already watching this ref and remove the old RefWatch if so
-            for (index, aRefWatch) in refsToWatch.enumerate() {
+            for (index, aRefWatch) in refsToWatch.enumerated() {
                 if aRefWatch.ref === ref {
-                    refsToWatch.removeAtIndex(index)
+                    refsToWatch.remove(at: index)
                     break
                 }
             }
@@ -107,7 +107,7 @@ class LeakInspector: NSObject {
         }
 
         for clazz in classesToIgnore {
-            if ref.dynamicType === clazz.self {
+            if type(of: ref) === clazz.self {
                 return false
             }
         }
@@ -121,8 +121,7 @@ class LeakInspector: NSObject {
     }
 
     private func scheduleToRun() {
-        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(frequency * Double(NSEC_PER_SEC)))
-        dispatch_after(delayTime, dispatch_get_main_queue()) {
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + DispatchTimeInterval.seconds(frequency)) {
             self.checkForLeaks()
             self.scheduleToRun()
         }
@@ -151,9 +150,9 @@ class LeakInspector: NSObject {
 
         // Remove objects that we no longer need to track
         for refWatch in removeRefs {
-            for (index, aRefWatch) in refsToWatch.enumerate() {
+            for (index, aRefWatch) in refsToWatch.enumerated() {
                 if refWatch === aRefWatch {
-                    refsToWatch.removeAtIndex(index)
+                    refsToWatch.remove(at: index)
                     break
                 }
             }
@@ -166,7 +165,7 @@ class LeakInspector: NSObject {
         }
 
         if let controller = refWatch.ref as? UIViewController {
-            if controller.parentViewController == nil && controller.navigationController == nil && controller.presentingViewController == nil && refWatch.name != "UIApplicationRotationFollowingController" {
+            if controller.parent == nil && controller.navigationController == nil && controller.presentingViewController == nil && refWatch.name != "UIApplicationRotationFollowingController" {
                 return true
             }
         } else {

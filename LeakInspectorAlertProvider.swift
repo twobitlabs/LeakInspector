@@ -5,15 +5,15 @@
     func didLeakReference(ref: AnyObject, name: String) {
         // dismiss any already visible alert
         if let alertController = self.alertController {
-            alertController.dismissViewControllerAnimated(false, completion: nil)
+            alertController.dismiss(false, completion: nil)
         }
 
         let title = "Leak Inspector"
         let message = "Detected possible leak of \(name)"
         let ok = "OK"
 
-        let alertController = UIAlertController(title: title, message: message, preferredStyle: .Alert)
-        alertController.addAction(UIAlertAction(title: ok, style: UIAlertActionStyle.Default, handler: nil))
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: ok, style: UIAlertActionStyle.default, handler: nil))
         alertController.show()
         self.alertController = alertController
     }
@@ -27,8 +27,8 @@ extension UIAlertController {
         present(animated: true, completion: nil)
     }
 
-    func present(animated animated: Bool, completion: (() -> Void)?) {
-        if let rootVC = UIApplication.sharedApplication().keyWindow?.rootViewController {
+    func present(animated: Bool, completion: (() -> Void)?) {
+        if let rootVC = UIApplication.shared.keyWindow?.rootViewController {
             presentFromController(rootVC, animated: animated, completion: completion)
         }
     }
@@ -39,7 +39,7 @@ extension UIAlertController {
         } else if let tabVC = controller as? UITabBarController, let selectedVC = tabVC.selectedViewController {
             presentFromController(selectedVC, animated: animated, completion: completion)
         } else {
-            controller.presentViewController(self, animated: animated, completion: completion)
+            controller.present(self, animated: animated, completion: completion)
         }
     }
 
