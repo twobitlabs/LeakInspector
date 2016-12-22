@@ -1,5 +1,7 @@
+import UIKit
+
 @objc protocol LeakInspectorDelegate {
-    func didLeakReference(ref: AnyObject, name: String)
+    func didLeakReference(_ ref: AnyObject, name: String)
 }
 
 @objc protocol LeakInspectorIgnore {
@@ -23,7 +25,7 @@ class LeakInspector: NSObject {
 
     static var delegate: LeakInspectorDelegate? {
         didSet {
-            sharedInstance // forces the shared instance to initialize
+            _ = sharedInstance // forces the shared instance to initialize
         }
     }
 
@@ -41,43 +43,43 @@ class LeakInspector: NSObject {
         }
     }
 
-    class func watch(ref: AnyObject) {
+    class func watch(_ ref: AnyObject) {
         if sharedInstance.simulator {
-            register(ref, name: String(ref.self), ignore: false)
+            register(ref, name: String(describing: ref.self), ignore: false)
         }
     }
 
-    class func ignore(ref: AnyObject) {
+    class func ignore(_ ref: AnyObject) {
         if sharedInstance.simulator {
-            register(ref, name:String(ref.self), ignore: true)
+            register(ref, name: String(describing: ref.self), ignore: true)
         }
     }
 
-    class func ignoreClass(type: AnyObject.Type) {
+    class func ignoreClass(_ type: AnyObject.Type) {
         if sharedInstance.simulator {
             if Thread.isMainThread {
                 sharedInstance.ignoreClass(type)
             } else {
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.async {
                     self.sharedInstance.ignoreClass(type)
-                })
+                }
             }
         }
     }
 
-    private class func register(ref: AnyObject, name: String, ignore: Bool) {
+    private class func register(_ ref: AnyObject, name: String, ignore: Bool) {
         if sharedInstance.simulator {
             if Thread.isMainThread {
                 sharedInstance.register(ref, name: name, ignore: ignore)
             } else {
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.async {
                     self.sharedInstance.register(ref, name: name, ignore: ignore)
-                })
+                }
             }
         }
     }
 
-    private func ignoreClass(type: AnyObject.Type) {
+    private func ignoreClass(_ type: AnyObject.Type) {
         for (index, clazz) in classesToIgnore.enumerated() {
             if clazz === type {
                 classesToIgnore.remove(at: index)
@@ -87,7 +89,7 @@ class LeakInspector: NSObject {
         classesToIgnore.append(type.self)
     }
 
-    private func register(ref: AnyObject, name: String, ignore: Bool) {
+    private func register(_ ref: AnyObject, name: String, ignore: Bool) {
         if shouldWatch(ref) {
             let newRefToWatch = RefWatch(ref: ref, name: name, ignore: ignore)
             // Check to see if we're already watching this ref and remove the old RefWatch if so
@@ -101,7 +103,7 @@ class LeakInspector: NSObject {
         }
     }
 
-    private func shouldWatch(ref: AnyObject) -> Bool {
+    private func shouldWatch(_ ref: AnyObject) -> Bool {
         if ref is LeakInspectorIgnore {
             return false
         }
@@ -159,7 +161,7 @@ class LeakInspector: NSObject {
         }
     }
 
-    private func hasRefLikelyLeaked(refWatch: RefWatch) -> Bool {
+    private func hasRefLikelyLeaked(_ refWatch: RefWatch) -> Bool {
         if (refWatch.ignore) {
             return false
         }
@@ -171,11 +173,11 @@ class LeakInspector: NSObject {
         } else {
             return true
         }
-        
+
         return false
     }
 
-    private func alertThatRefHasLeaked(ref: AnyObject, name: String) {
+    private func alertThatRefHasLeaked(_ ref: AnyObject, name: String) {
         NSLog("Leak Inspector: detected possible leak of %@", name)
         if let delegate = LeakInspector.delegate {
             delegate.didLeakReference(ref, name: name)

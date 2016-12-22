@@ -1,11 +1,13 @@
+import UIKit
+
 @objc class LeakInspectorAlertProvider: NSObject, LeakInspectorDelegate {
 
-    private weak var alertController: AnyObject?
+    private weak var alertController: UIAlertController?
 
-    func didLeakReference(ref: AnyObject, name: String) {
+    func didLeakReference(_ ref: AnyObject, name: String) {
         // dismiss any already visible alert
         if let alertController = self.alertController {
-            alertController.dismiss(false, completion: nil)
+            alertController.dismiss(animated: false, completion: nil)
         }
 
         let title = "Leak Inspector"
@@ -20,7 +22,6 @@
 
 }
 
-@available(iOS 8.0, *)
 extension UIAlertController {
 
     func show() {
@@ -29,18 +30,18 @@ extension UIAlertController {
 
     func present(animated: Bool, completion: (() -> Void)?) {
         if let rootVC = UIApplication.shared.keyWindow?.rootViewController {
-            presentFromController(rootVC, animated: animated, completion: completion)
+            present(from: rootVC, animated: animated, completion: completion)
         }
     }
 
-    private func presentFromController(controller: UIViewController, animated: Bool, completion: (() -> Void)?) {
+    private func present(from controller: UIViewController, animated: Bool, completion: (() -> Void)?) {
         if  let navVC = controller as? UINavigationController, let visibleVC = navVC.visibleViewController {
-            presentFromController(visibleVC, animated: animated, completion: completion)
+            present(from: visibleVC, animated: animated, completion: completion)
         } else if let tabVC = controller as? UITabBarController, let selectedVC = tabVC.selectedViewController {
-            presentFromController(selectedVC, animated: animated, completion: completion)
+            present(from: selectedVC, animated: animated, completion: completion)
         } else {
             controller.present(self, animated: animated, completion: completion)
         }
     }
-
+    
 }
