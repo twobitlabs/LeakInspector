@@ -186,14 +186,14 @@ class LeakInspector: NSObject {
 
     private func swizzleViewDidLoad() {
         method_exchangeImplementations(
-            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView)),
-            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView_WithLeakInspector))
+            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView))!,
+            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView_WithLeakInspector))!
         )
     }
 }
 
 extension UIViewController {
-    func loadView_WithLeakInspector() {
+    @objc func loadView_WithLeakInspector() {
         LeakInspector.watch(self)
         loadView_WithLeakInspector()
     }
