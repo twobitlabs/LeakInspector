@@ -8,6 +8,7 @@ import UIKit
 
 }
 
+@objcMembers
 class LeakInspector: NSObject {
 
     private class RefWatch {
