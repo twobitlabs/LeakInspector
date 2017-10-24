@@ -35,7 +35,9 @@ extension UIAlertController {
     }
 
     private func present(from controller: UIViewController, animated: Bool, completion: (() -> Void)?) {
-        if  let navVC = controller as? UINavigationController, let visibleVC = navVC.visibleViewController {
+        if let presentedViewController = controller.presentedViewController {
+            present(from: presentedViewController, animated: animated, completion: completion)
+        } else if  let navVC = controller as? UINavigationController, let visibleVC = navVC.visibleViewController {
             present(from: visibleVC, animated: animated, completion: completion)
         } else if let tabVC = controller as? UITabBarController, let selectedVC = tabVC.selectedViewController {
             present(from: selectedVC, animated: animated, completion: completion)
