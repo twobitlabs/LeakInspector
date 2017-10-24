@@ -115,6 +115,10 @@ class LeakInspector: NSObject {
             }
         }
 
+        if type(of: ref) === UIViewController.self {
+            return false
+        }
+
         for refWatch in refsToWatch {
             if ref === refWatch.ref {
                 return false
