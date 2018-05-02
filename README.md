@@ -6,8 +6,6 @@ An iOS memory leak detection tool to help you prevent leaking UIViewControllers 
 
 LeakInspector is written in Swift but works on Objective-C projects too. This project was inspired by [Square's Leak Canary](https://github.com/square/leakcanary) for Android. At [Two Bit Labs](http://twobitlabs.com) we use Leak Canary on our Android projects and have been so impressed with how it helped us catch memory leaks during the development cycle that we wanted a similar tool for the iOS apps we work on.
 
-This was a quick proof of concept so there's a lot of room for improvement to make it more robust and helpful in identifying the source of a leak.
-
 ## How to use it
 
 At the moment we don't have Cocoapods or Carthage support so you'll need to git submodule it or just download a zip and drop the 2 swift files directly into your project:
@@ -18,16 +16,16 @@ At the moment we don't have Cocoapods or Carthage support so you'll need to git 
 
 In your application delegate's didFinishLaunchingWithOptions, register the alert provider before any controllers are created:
 
-Objective-C:
-
-```
-[LeakInspector setDelegate:[LeakInspectorAlertProvider new]];
-```
-
 Swift:
 
 ```
 LeakInspector.delegate = LeakInspectorAlertProvider()
+```
+
+Objective-C:
+
+```
+[LeakInspector setDelegate:[LeakInspectorAlertProvider new]];
 ```
 
 That's it. When running on the simulator LeakInspector will now warn you if it thinks a controller might have leaked!
@@ -42,14 +40,6 @@ You may have legitimate cases in your app where you remove a controller but want
 
 When you are done using an object and want to be sure it gets deallocated just register it with LeakInspector. For example if you have some object that you know does a lot with blocks, GCD, etc that you want to make sure always gets cleaned up just track it:
 
-Objective-C:
-
-```
-[self.pollingManager stopPolling];
-[LeakInspector watch:self.pollingManager]; // Start tracking it and Leak Inspector will warn you if it doesn't get deallocated
-self.pollingManager = nil;
-```
-
 Swift:
 
 ```
@@ -58,11 +48,32 @@ LeakInspector.watch(pollingManager)
 pollingManager = nil
 ```
 
+Objective-C:
+
+```
+[self.pollingManager stopPolling];
+[LeakInspector watch:self.pollingManager]; // Start tracking it and Leak Inspector will warn you if it doesn't get deallocated
+self.pollingManager = nil;
+```
+
 If you're registering multiple objects of the same class, there's a second version of the watch method that lets you pass an identifying name so that if a leak is discovered it will help you disambiguate which object leaked:
 
 ```
 LeakInspector.watch(pollingManagerA, name: "News Feed PollingManager")
 LeakInspector.watch(pollingManagerB, name: "Message PollingManager")
+```
+
+### Controllers with unusual lifecycles
+
+If you have a controller that you keep a strong reference to beyond the normal iOS lifecycle you can tell LeakInspector to ignore it:
+
+Swift:
+
+```
+LeakInspector.ignore(controller)
+// then later in say deinit of the referencing class you can rewatch it to
+// make sure it really does deallocate at that point
+LeakInspector.rewatch(controller)
 ```
 
 ## I found a leak, now what?

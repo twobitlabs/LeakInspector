@@ -56,6 +56,14 @@ class LeakInspector: NSObject {
         }
     }
 
+    class func rewatch(_ ref: AnyObject) {
+        // If you've ignored a ref and want to start watching it again
+        if sharedInstance.simulator {
+            unregister(ref)
+            register(ref, name: String(describing: ref.self), ignore: false)
+        }
+    }
+
     class func ignoreClass(_ type: AnyObject.Type) {
         if sharedInstance.simulator {
             if Thread.isMainThread {
@@ -63,6 +71,18 @@ class LeakInspector: NSObject {
             } else {
                 DispatchQueue.main.async {
                     self.sharedInstance.ignoreClass(type)
+                }
+            }
+        }
+    }
+
+    private class func unregister(_ ref: AnyObject) {
+        if sharedInstance.simulator {
+            if Thread.isMainThread {
+                sharedInstance.unregister(ref)
+            } else {
+                DispatchQueue.main.async {
+                    self.sharedInstance.unregister(ref)
                 }
             }
         }
@@ -88,6 +108,15 @@ class LeakInspector: NSObject {
             }
         }
         classesToIgnore.append(type.self)
+    }
+
+    private func unregister(_ ref: AnyObject) {
+        for (index, aRefWatch) in refsToWatch.enumerated() {
+            if aRefWatch.ref === ref {
+                refsToWatch.remove(at: index)
+                break
+            }
+        }
     }
 
     private func register(_ ref: AnyObject, name: String, ignore: Bool) {
