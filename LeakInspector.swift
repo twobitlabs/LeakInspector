@@ -11,11 +11,12 @@ import UIKit
 @objcMembers
 class LeakInspector: NSObject {
 
-    private class RefWatch {
+    private class RefWatch: CustomStringConvertible {
         weak var ref: AnyObject?
         let name: String
         let ignore: Bool
         var failedChecks = 0
+        var description: String { return "LeakInspector.RefWatch(name: \(name), ignore: \(ignore), failedChecks: \(failedChecks))" }
 
         init(ref: AnyObject, name: String, ignore: Bool) {
             self.ref = ref
@@ -134,6 +135,12 @@ class LeakInspector: NSObject {
     }
 
     private func shouldWatch(_ ref: AnyObject) -> Bool {
+        guard !String(describing: ref).contains("UIApplicationRotationFollowingController") else { return false }
+        guard !String(describing: ref).contains("UIInputWindowController") else { return false }
+        guard !String(describing: ref).contains("_UIAlertControllerTextFieldViewController") else { return false }
+        guard !String(describing: ref).contains("UISystemKeyboardDockController") else { return false }
+        guard !String(describing: ref).contains("UICompatibilityInputViewController") else { return false }
+
         if ref is LeakInspectorIgnore {
             return false
         }
@@ -201,7 +208,7 @@ class LeakInspector: NSObject {
         }
 
         if let controller = refWatch.ref as? UIViewController {
-            if controller.parent == nil && controller.navigationController == nil && controller.presentingViewController == nil && refWatch.name != "UIApplicationRotationFollowingController" {
+            if controller.parent == nil && controller.navigationController == nil && controller.presentingViewController == nil {
                 return true
             }
         } else {
@@ -220,7 +227,7 @@ class LeakInspector: NSObject {
 
     private func swizzleViewDidLoad() {
         method_exchangeImplementations(
-            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView))!,
+            class_getInstanceMethod(UIViewController.self, #selector(UIViewController.viewDidLoad))!,
             class_getInstanceMethod(UIViewController.self, #selector(UIViewController.loadView_WithLeakInspector))!
         )
     }
