@@ -101,7 +101,8 @@ class LeakInspector: NSObject {
     }
 
     private func ignoreClass(_ type: AnyObject.Type) {
-        for (index, clazz) in classesToIgnore.enumerated() {
+        for index in 0..<classesToIgnore.count {
+            let clazz: AnyClass = classesToIgnore[index]
             if clazz === type {
                 classesToIgnore.remove(at: index)
                 break
