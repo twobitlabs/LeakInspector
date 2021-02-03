@@ -209,7 +209,7 @@ class LeakInspector: NSObject {
         }
 
         if let controller = refWatch.ref as? UIViewController {
-            if controller.parent == nil && controller.navigationController == nil && controller.presentingViewController == nil {
+            if controller.parent == nil && controller.navigationController == nil && controller.presentingViewController == nil && controller.view.window?.rootViewController != controller {
                 return true
             }
         } else {
