@@ -53,6 +53,7 @@ class LeakInspector: NSObject {
 
     class func ignore(_ ref: AnyObject) {
         if sharedInstance.simulator {
+            unregister(ref)
             register(ref, name: String(describing: ref.self), ignore: true)
         }
     }
