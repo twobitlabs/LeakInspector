@@ -142,6 +142,8 @@ class LeakInspector: NSObject {
         guard !String(describing: ref).contains("_UIAlertControllerTextFieldViewController") else { return false }
         guard !String(describing: ref).contains("UISystemKeyboardDockController") else { return false }
         guard !String(describing: ref).contains("UICompatibilityInputViewController") else { return false }
+        guard !String(describing: ref).contains("UIAlertController") else { return false }
+        guard !String(describing: ref).contains("GCKUIGuestModePairingViewController") else { return false }
 
         if ref is LeakInspectorIgnore {
             return false
